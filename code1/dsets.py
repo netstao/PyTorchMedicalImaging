@@ -33,11 +33,11 @@ CandidateInfoTuple = namedtuple(
 @functools.lru_cache(1)
 def getCandidateInfoList(requireOnDisk_bool=True):
 
-    mhd_list = glob.glob('D:/pytorchProject/data/lunadata/subset*/*.mhd')
+    mhd_list = glob.glob('F:/BaiduNetdiskDownload/luna/subset*/*.mhd')
     presentOnDisk_set = {os.path.split(p)[-1][:-4] for p in mhd_list}
 
     diameter_dict = {}
-    with open('D:/pytorchProject/data/lunadata/annotations.csv', "r") as f:
+    with open('F:/BaiduNetdiskDownload/luna/annotations.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
             annotationCenter_xyz = tuple([float(x) for x in row[1:4]])
@@ -48,7 +48,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
             )
 
     candidateInfo_list = []
-    with open('D:/pytorchProject/data/lunadata/candidates.csv', "r") as f:
+    with open('F:/BaiduNetdiskDownload/luna/candidates.csv', "r") as f:
         for row in list(csv.reader(f))[1:]:
             series_uid = row[0]
 
@@ -82,7 +82,7 @@ def getCandidateInfoList(requireOnDisk_bool=True):
 class Ct:
     def __init__(self, series_uid):
         mhd_path = glob.glob(
-            'D:/pytorchProject/data/lunadata/subset*/{}.mhd'.format(series_uid)
+            'F:/BaiduNetdiskDownload/luna/subset*/{}.mhd'.format(series_uid)
         )[0]
 
         ct_mhd = sitk.ReadImage(mhd_path)
