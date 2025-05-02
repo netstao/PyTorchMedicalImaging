@@ -1,0 +1,12 @@
+tensorboard
+blosc>=1.8.1,<2
+diskcache==4.1.0
+h5py
+jupyter
+matplotlib
+numpy
+Pillow
+scikit-image>=0.15.0
+scipy
+SimpleITK
+tensorflow

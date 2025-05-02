@@ -3,3 +3,4 @@ data/cifar10
 code1/__pycache__
 data-unversioned/cache
 util/__pycache__
+data-unversioned
