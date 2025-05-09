@@ -87,7 +87,12 @@ class Ct:
         )[0]
 
         ct_mhd = sitk.ReadImage(mhd_path)
-        ct_a = np.array(sitk.GetArrayFromImage(ct_mhd), dtype=np.float32)
+        # ct_a = np.array(sitk.GetArrayFromImage(ct_mhd), dtype=np.float32)
+        ct_array = []
+        for z in range(ct_mhd.GetSize()[2]):
+            slice_data = sitk.GetArrayFromImage(ct_mhd[:, :, z]).astype(np.float16)
+            ct_array.append(slice_data)
+        ct_a = np.stack(ct_array, axis=0)
 
         # CTs are natively expressed in https://en.wikipedia.org/wiki/Hounsfield_scale
         # HU are scaled oddly, with 0 g/cc (air, approximately) being -1000 and 1 g/cc (water) being 0.
