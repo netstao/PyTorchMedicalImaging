@@ -1,2 +1,10 @@
 # PyTorch 张量基本操作
 - [一个简单的张量](ch04/01.ipynb)
+- [从Numpy创建张量,存储与获取](ch04/02.ipynb)
+- [张量拼接、切分、索引、变换](ch04/04.ipynb)
+- [张量传递到GPU](ch04/07.ipynb)
+- [张量偏移量和步长](ch04/09.ipynb)
+- [二维图像加载](ch05/01.ipynb)
+- [DICOM图像加载](ch05/03.ipynb)
+- [CSV加载](ch05/04.ipynb)
+- [词嵌入加载、One-Hot编码](ch05/07.ipynb)
