@@ -37,3 +37,4 @@
 - [链接分类和分割模型](ch10/01.ipynb)
 - [AUC-ROC评分](10-2.ipynb)
 - [finetune微调模型](10-3.ipynb) 
+- [完整端到端实现](10-4.ipynb) 
