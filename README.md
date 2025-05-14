@@ -33,4 +33,7 @@
 - [分割模型数据预处理、构建DataSet类、Adam优化器、Dice损失、模型存储](9-19.ipynb)  
 - [分割模型训练、TensorBoard查看](9-25.ipynb) 
 
-# 端到端模型图像分割与分类模型连接
+# 端到端模型链接与部署
+- [链接分类和分割模型](ch10/01.ipynb)
+- [AUC-ROC评分](10-2.ipynb)
+- [finetune微调模型](10-3.ipynb) 
