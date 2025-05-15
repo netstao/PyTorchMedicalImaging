@@ -2,6 +2,9 @@ import argparse
 import datetime
 import os
 import sys
+import hashlib
+import shutil
+
 
 import numpy as np
 
@@ -189,7 +192,7 @@ class LunaTrainingApp:
 
         train_dl = self.initTrainDl()
         val_dl = self.initValDl()
-
+        best_score = 0.0
         for epoch_ndx in range(1, self.cli_args.epochs + 1):
 
             log.info("Epoch {} of {}, {}/{} batches of size {}*{}".format(
@@ -201,11 +204,19 @@ class LunaTrainingApp:
                 (torch.cuda.device_count() if self.use_cuda else 1),
             ))
 
+            
+
             trnMetrics_t = self.doTraining(epoch_ndx, train_dl)
             self.logMetrics(epoch_ndx, 'trn', trnMetrics_t)
 
-            valMetrics_t = self.doValidation(epoch_ndx, val_dl)
-            self.logMetrics(epoch_ndx, 'val', valMetrics_t)
+            if epoch_ndx == 1 or epoch_ndx % 5 == 0:
+                # if validation is wanted
+                valMetrics_t = self.doValidation(epoch_ndx, val_dl)
+                score = self.logMetrics(epoch_ndx, 'val', valMetrics_t)
+                best_score = max(score, best_score)
+
+                self.saveModel('cls', epoch_ndx, score == best_score)
+
 
         if hasattr(self, 'trn_writer'):
             self.trn_writer.close()
@@ -377,6 +388,10 @@ class LunaTrainingApp:
         for key, value in metrics_dict.items():
             writer.add_scalar(key, value, self.totalTrainingSamples_count)
 
+        
+        writer.flush()
+
+        
         writer.add_pr_curve(
             'pr',
             metrics_t[METRICS_LABEL_NDX],
@@ -403,6 +418,10 @@ class LunaTrainingApp:
                 self.totalTrainingSamples_count,
                 bins=bins,
             )
+        
+        score = metrics_dict['pr/recall']
+
+        return score
 
         # score = 1 \
         #     + metrics_dict['pr/f1_score'] \
@@ -435,6 +454,52 @@ class LunaTrainingApp:
     #             except Exception as e:
     #                 log.error([min_data, max_data])
     #                 raise
+
+    def saveModel(self, type_str, epoch_ndx, isBest=False):
+        file_path = os.path.join(
+            'data-unversioned',
+            'part',
+            'models',
+            self.cli_args.tb_prefix,
+            '{}_{}_{}.{}.state'.format(
+                type_str,
+                self.time_str,
+                self.cli_args.comment,
+                self.totalTrainingSamples_count,
+            )
+        )
+
+        os.makedirs(os.path.dirname(file_path), mode=0o755, exist_ok=True)
+
+        model = self.model
+        if isinstance(model, torch.nn.DataParallel):
+            model = model.module
+
+        state = {
+            'sys_argv': sys.argv,
+            'time': str(datetime.datetime.now()),
+            'model_state': model.state_dict(),
+            'model_name': type(model).__name__,
+            'optimizer_state' : self.optimizer.state_dict(),
+            'optimizer_name': type(self.optimizer).__name__,
+            'epoch': epoch_ndx,
+            'totalTrainingSamples_count': self.totalTrainingSamples_count,
+        }
+        torch.save(state, file_path)
+
+        log.info("Saved model params to {}".format(file_path))
+
+        if isBest:
+            best_path = os.path.join(
+                'data-unversioned', 'part', 'models',
+                self.cli_args.tb_prefix,
+                f'{type_str}_{self.time_str}_{self.cli_args.comment}.best.state')
+            shutil.copyfile(file_path, best_path)
+
+            log.info("Saved model params to {}".format(best_path))
+
+        with open(file_path, 'rb') as f:
+            log.info("SHA1: " + hashlib.sha1(f.read()).hexdigest())
 
 
 if __name__ == '__main__':
