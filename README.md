@@ -39,7 +39,6 @@
 - [finetune微调模型](10-3.ipynb) 
 - [完整端到端实现](10-4.ipynb) 
 - [使用flask部署模型](flask_http.py) 
-    - 运行 
     ```bash
         # 启动分类模型http服务
 
@@ -48,3 +47,11 @@
         # 客服端测试
         python client_test.py
         ```
+- [使用sanic部署模型](sanic_http.py)
+    ```bash
+        #启动http服务
+        python -m sanic_http .\data\model\horse2zebra_0.4.0.pth
+
+        #客户端测试
+        curl -T .\data\2\horse1.jpg http://localhost:8000/image --output ./data/2/ret.jpg --max-time 120 -H "Content-Type: image/jpeg"
+    ```
