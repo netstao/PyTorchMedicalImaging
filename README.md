@@ -44,3 +44,7 @@
         # 启动分类模型http服务
 
         python -m flask_http data/model/cls_2025-05-14_18.32.02_dlwpt.best.state
+
+        # 客服端测试
+        python client_test.py
+        ```
