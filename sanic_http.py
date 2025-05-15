@@ -10,19 +10,22 @@ from cyclegan import get_pretrained_model
 import torch
 import torchvision
 from PIL import Image
+import io
 from io import BytesIO
 
 app = Sanic(__name__)
 # 全局配置：请求超时时间（秒）
 app.config.REQUEST_TIMEOUT = 600  # 5分钟
 app.config.KEEP_ALIVE_TIMEOUT = 600  # 5分钟
+app.config.KEEP_ALIVE  = False  # 5分钟
+app.config.RESPONSE_TIMEOUT = 600  # 5分钟
 
 # 设备配置：优先使用GPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # assert torch.cuda.is_available(), "GPU not detected. Please ensure CUDA is installed."
 MAX_QUEUE_SIZE = 10
 MAX_BATCH_SIZE = 16
-MAX_WAIT = 0
+MAX_WAIT = 0.5
 
 class HandlingError(Exception):
     def __init__(self, msg, code=500):
@@ -77,7 +80,7 @@ class ModelRunner:
             self.schedule_processing_if_needed()
         
         try:
-            await asyncio.wait_for(our_task["done_event"].wait(), timeout=160.0)
+            await asyncio.wait_for(our_task["done_event"].wait(), timeout=600)
         except asyncio.TimeoutError:
             async with self.queue_lock:
                 if our_task in self.queue:
@@ -148,27 +151,43 @@ if __name__ == "__main__":
 @app.route("/image", methods=["PUT"], stream=True)
 async def image(request):
     try:
-        MAX_SIZE = 2 ** 22  # 10MB
-        data = BytesIO()
-        
-        # 流式读取请求体，避免内存拷贝
-        async for chunk in request.stream:
-            if data.tell() + len(chunk) > MAX_SIZE:
-                raise HandlingError("File too large", code=413)
-            data.write(chunk)
+        print (request.headers)
+        content_length = int(request.headers.get('content-length', '0'))
+        MAX_SIZE = 2**22 # 10MB
+        if content_length:
+            if content_length > MAX_SIZE:
+                raise HandlingError("Too large")
+            data = bytearray(content_length)
+        else:
+            data = bytearray(MAX_SIZE)
+        pos = 0
+        while True:
+            # so this still copies too much stuff.
+            data_part = await request.stream.read()
+            if data_part is None:
+                break
+            data[pos: len(data_part) + pos] = data_part
+            pos += len(data_part)
+            print('data part size: ', len(data_part), 'total size: ', pos)
+            if pos > MAX_SIZE:
+                raise HandlingError("Too large")
         
         # 图像预处理
-        im = Image.open(data).convert("RGB")
+        print('data: ', len(data))
+        im = Image.open(io.BytesIO(data)).convert("RGB")
         im = torchvision.transforms.functional.resize(im, (228, 228))
         input_tensor = torchvision.transforms.functional.to_tensor(im).unsqueeze(0)  # 添加批次维度
         if not style_transfer_runner.initialized:
             raise HandlingError("Model initializing, please wait", code=503)
         # 执行推理
+        print('input_tensor: ', input_tensor.shape)
         output_tensor = await style_transfer_runner.process_input(input_tensor.squeeze(0))  # 移除批次维度
         
         # 转换为图像并返回
+        print('output_tensor: ', output_tensor.shape)
         output_image = torchvision.transforms.functional.to_pil_image(output_tensor)
         img_byte_arr = BytesIO()
+        print('output_image: ', output_image.size)
         output_image.save(img_byte_arr, format="JPEG")
         return raw(img_byte_arr.getvalue(), content_type="image/jpeg")
     
