@@ -38,3 +38,9 @@
 - [AUC-ROC评分](10-2.ipynb)
 - [finetune微调模型](10-3.ipynb) 
 - [完整端到端实现](10-4.ipynb) 
+- [使用flask部署模型](flask_http.py) 
+    - 运行 
+    ```bash
+        # 启动分类模型http服务
+
+        python -m flask_http data/model/cls_2025-05-14_18.32.02_dlwpt.best.state
