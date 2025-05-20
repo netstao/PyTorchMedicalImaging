@@ -78,7 +78,9 @@ class ResNetGenerator(nn.Module):
 
 def get_pretrained_model(model_path, map_location=None):
     netG = ResNetGenerator()
+    print("开始加载模型")
     model_data = torch.load(model_path, map_location=map_location)
+    print("模型加载完成")
     netG.load_state_dict(model_data)
     netG.eval()
     for p in netG.parameters():
